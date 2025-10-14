@@ -1,19 +1,24 @@
 {
   "expo": {
-    "name": "nemuke-quest",
+    "name": "Nemuke Quest",
     "slug": "nemuke-quest",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#171C2E"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ryomasolid.nemukequest",
+      "config": {
+        "usesNonExemptEncryption": false,
+        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~1458002511"
+      },
+      "buildNumber": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -22,9 +27,14 @@
       [
         "react-native-google-mobile-ads",
         {
-          "iosAppId": "ca-app-pub-3362493734697220~7114390725"
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1dbab407-2158-4517-8759-3cde4d61a119"
+      }
+    }
   }
 }
