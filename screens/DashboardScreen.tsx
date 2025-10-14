@@ -13,6 +13,8 @@ import {
 import * as Progress from "react-native-progress";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { Quest } from "../types";
+import { BannerAd, BannerAdSize, TestIds, RewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads';
+import { bannerAdUnitId, rewardedAdUnitId } from '../admob';
 
 // 利用可能なクエストのリスト
 const AVAILABLE_QUESTS: Quest[] = [
@@ -46,16 +48,60 @@ const AVAILABLE_QUESTS: Quest[] = [
   },
 ];
 
+const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, {
+  requestNonPersonalizedAdsOnly: true, // 必要に応じて設定
+});
+
 const DashboardScreen: React.FC = () => {
   const { playerState, gainExp } = usePlayerState();
   const [demonIsActive, setDemonIsActive] = useState(false);
+  const [adLoaded, setAdLoaded] = useState(false);
+
+  // リワード広告のロードとイベントリスナー設定
+  React.useEffect(() => {
+    const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      setAdLoaded(true);
+    });
+    const unsubscribeEarned = rewarded.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      reward => {
+        console.log('User earned reward of ', reward);
+        // ここで実際に報酬を付与
+        gainExp(reward.amount); // 仮にEXPを10に設定した場合
+      },
+    );
+
+    // 広告をロード開始
+    rewarded.load();
+
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeEarned();
+    };
+  }, [gainExp]);
+
+  const showRewardedAd = () => {
+    if (adLoaded) {
+      rewarded.show();
+    } else {
+      Alert.alert("広告の準備ができていません", "少し時間をおいてから再度お試しください。");
+    }
+  };
 
   const handleCompleteQuest = (quest: Quest) => {
     gainExp(quest.expReward);
     setDemonIsActive(false);
+
     Alert.alert(
-      "クエスト達成！",
-      `${quest.title} をクリアし、${quest.expReward}EXPを獲得しました！`
+      'クエスト達成！',
+      `+${quest.expReward}EXPを獲得しました！`,
+      [
+        { text: 'OK', style: 'cancel' },
+        {
+          text: '報酬を2倍にする(広告)',
+          onPress: () => showRewardedAd(),
+        },
+      ]
     );
   };
 
@@ -156,13 +202,22 @@ const DashboardScreen: React.FC = () => {
           keyExtractor={(item) => item.id}
         />
       </View>
+
+      <View style={styles.bannerContainer}>
+        <BannerAd
+          unitId={bannerAdUnitId}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+          }}
+        />
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#171C2E" },
-  // Player Status
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -183,7 +238,6 @@ const styles = StyleSheet.create({
   levelText: { color: "white", fontWeight: "bold", fontSize: 18 },
   expBarContainer: { flex: 1 },
   expText: { color: "#A0AEC0", fontSize: 12, marginBottom: 8 },
-  // Sleep Demon
   demonContainer: { alignItems: "center", marginVertical: 32 },
   demonEmoji: { fontSize: 80 },
   demonText: {
@@ -201,7 +255,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   summonButtonText: { color: "white", fontWeight: "600" },
-  // Quest List
   questListContainer: { flex: 1, marginHorizontal: 16 },
   questListTitle: {
     color: "white",
@@ -230,6 +283,12 @@ const styles = StyleSheet.create({
   questTitle: { color: "white", fontSize: 16, fontWeight: "600" },
   questDescription: { color: "#A0AEC0", fontSize: 12, marginTop: 2 },
   questExp: { color: "#F59E0B", fontSize: 14, fontWeight: "bold" },
+  bannerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    alignItems: 'center',
+  },
 });
 
 export default DashboardScreen;
