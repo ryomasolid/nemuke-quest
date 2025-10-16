@@ -1,19 +1,28 @@
 // hooks/usePlayerState.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { ACHIEVEMENTS } from "../achievements";
 import { PlayerState } from "../types";
 
-const STORAGE_KEY = "@player_state";
-const BASE_EXP = 100; // レベルアップに必要な基本EXP
+const STORAGE_KEY = "@player_state_v2"; // バージョンを更新して初期化
+const BASE_EXP = 100;
+
+const initialState: PlayerState = {
+  level: 1,
+  currentExp: 0,
+  expToNextLevel: BASE_EXP,
+  gold: 0,
+  questsCompleted: 0,
+  unlockedAchievements: [],
+  inventory: {
+    expBoostMultiplier: 1, // 初期状態ではブーストなし
+  },
+};
 
 export const usePlayerState = () => {
-  const [playerState, setPlayerState] = useState<PlayerState>({
-    level: 1,
-    currentExp: 0,
-    expToNextLevel: BASE_EXP,
-  });
+  const [playerState, setPlayerState] = useState<PlayerState>(initialState);
 
-  // アプリ起動時にAsyncStorageからデータを読み込む
+  // データのロード
   useEffect(() => {
     const loadState = async () => {
       try {
@@ -28,7 +37,7 @@ export const usePlayerState = () => {
     loadState();
   }, []);
 
-  // プレイヤーの状態が変化したらAsyncStorageに保存する
+  // データのセーブ
   useEffect(() => {
     const saveState = async () => {
       try {
@@ -40,28 +49,74 @@ export const usePlayerState = () => {
     saveState();
   }, [playerState]);
 
-  // EXPを獲得する関数
-  const gainExp = (amount: number) => {
+  // 実績解除をチェックする関数
+  const checkAchievements = useCallback((currentState: PlayerState) => {
+    const newlyUnlocked: string[] = [];
+    ACHIEVEMENTS.forEach((ach) => {
+      // まだ解除してなくて、条件を満たした場合
+      if (
+        !currentState.unlockedAchievements.includes(ach.id) &&
+        ach.condition(currentState)
+      ) {
+        newlyUnlocked.push(ach.id);
+      }
+    });
+    return newlyUnlocked;
+  }, []);
+
+  // クエストを完了した時の処理
+  const completeQuest = (exp: number, gold: number) => {
     setPlayerState((prevState) => {
-      let newExp = prevState.currentExp + amount;
+      let newExp =
+        prevState.currentExp + exp * prevState.inventory.expBoostMultiplier;
       let newLevel = prevState.level;
       let newExpToNextLevel = prevState.expToNextLevel;
 
-      // レベルアップ処理
       while (newExp >= newExpToNextLevel) {
         newLevel++;
         newExp -= newExpToNextLevel;
-        // 次のレベルに必要なEXPを計算 (例: 1.5倍ずつ増やす)
         newExpToNextLevel = Math.floor(BASE_EXP * Math.pow(1.5, newLevel - 1));
       }
 
-      return {
+      const updatedState = {
+        ...prevState,
         level: newLevel,
-        currentExp: newExp,
+        currentExp: Math.floor(newExp),
         expToNextLevel: newExpToNextLevel,
+        gold: prevState.gold + gold,
+        questsCompleted: prevState.questsCompleted + 1,
       };
+
+      // 実績解除チェック
+      const newAchievements = checkAchievements(updatedState);
+      if (newAchievements.length > 0) {
+        // alert(`実績解除: ${newAchievements.join(', ')}`); // ここでUIに通知
+        updatedState.unlockedAchievements = [
+          ...updatedState.unlockedAchievements,
+          ...newAchievements,
+        ];
+      }
+
+      return updatedState;
     });
   };
 
-  return { playerState, gainExp };
+  // アイテム購入処理
+  const buyItem = (cost: number, itemName: "expBoost") => {
+    if (playerState.gold < cost) {
+      // alert('ゴールドが足りません！');
+      return false;
+    }
+    setPlayerState((prevState) => ({
+      ...prevState,
+      gold: prevState.gold - cost,
+      inventory: {
+        ...prevState.inventory,
+        expBoostMultiplier: 1.5, // 1.5倍ブーストを有効化
+      },
+    }));
+    return true;
+  };
+
+  return { playerState, completeQuest, buyItem };
 };
