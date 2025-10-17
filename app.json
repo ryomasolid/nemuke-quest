@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nemuke Quest",
     "slug": "nemuke-quest",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -18,7 +18,7 @@
         "usesNonExemptEncryption": false,
         "googleMobileAdsAppId": "ca-app-pub-3940256099942544~1458002511"
       },
-      "buildNumber": "1.0.0"
+      "buildNumber": "1.1.1"
     },
     "web": {
       "favicon": "./assets/favicon.png"
