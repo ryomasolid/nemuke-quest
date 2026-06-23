@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 3.12.1"
+    "version": ">= 3.12.1",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -10,9 +11,18 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
+    "production": {
+      "distribution": "store",
+      "autoIncrement": true
+    }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "ryoma1106solid@yahoo.co.jp",
+        "appleTeamId": "7AVSSF5RFN",
+        "ascAppId": "6753980649"
+      }
+    }
   }
 }
