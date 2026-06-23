@@ -17,8 +17,7 @@
       "config": {
         "usesNonExemptEncryption": false,
         "googleMobileAdsAppId": "ca-app-pub-3940256099942544~1458002511"
-      },
-      "buildNumber": "1.2.0"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
